@@ -1,28 +1,51 @@
 import 'package:flutter/material.dart';
 import 'package:gastosappg15/db/db_helper_gastos.dart';
+import 'package:gastosappg15/generated/l10n.dart';
 import 'package:gastosappg15/models/gasto_model.dart';
 import 'package:gastosappg15/widgets/custom_card_widget.dart';
 import 'package:gastosappg15/widgets/field_widget.dart';
 import 'package:gastosappg15/widgets/register_modal_widget.dart';
 
-class HomeGatosPage extends StatefulWidget {
-  const HomeGatosPage({super.key});
+class HomeGastosPage extends StatefulWidget {
+  const HomeGastosPage({super.key});
 
   @override
-  State<HomeGatosPage> createState() => _HomeGatosPageState();
+  State<HomeGastosPage> createState() => _HomeGastosPageState();
 }
 
-class _HomeGatosPageState extends State<HomeGatosPage> {
+class _HomeGastosPageState extends State<HomeGastosPage> {
   TextEditingController _searchController = TextEditingController();
   List<GastoModel> gastosList = [];
+  List<GastoModel> gastosFiltradosList = [];
 
   Future<void> getDataFromDB() async {
     gastosList = await DbHelperGastos.instance.getGastos();
+    _searchController.clear;
+    gastosFiltradosList = List.from(gastosList);
     setState(() {});
   }
 
-  void showRegisterModal() {
-    showModalBottomSheet(
+  void filterGastos(String textoBuscado) {
+    if (textoBuscado.isEmpty) {
+      gastosFiltradosList = List.from(gastosList);
+    } else {
+      List<GastoModel> temporal = [];
+
+      for (int i = 0; i < gastosList.length; i++) {
+        GastoModel gastoActual = gastosList[i];
+
+        if (gastoActual.title.contains(textoBuscado)) {
+          temporal.add(gastoActual);
+        }
+        ;
+      }
+      gastosFiltradosList = temporal;
+    }
+    setState(() {});
+  }
+
+  void showRegisterModal() async {
+    final result = await showModalBottomSheet(
       isScrollControlled: true, //permite que el modal use mas altura
       context: context,
       builder: (BuildContext context) {
@@ -35,17 +58,23 @@ class _HomeGatosPageState extends State<HomeGatosPage> {
         );
       },
     );
+    if (result == true) {
+      getDataFromDB();
+    }
+    ;
   }
 
   @override
   void initState() {
     // TODO: implement initState
     super.initState();
+    gastosFiltradosList = [];
     getDataFromDB();
   }
 
   @override
   Widget build(BuildContext context) {
+    final texts = S.of(context);
     return SafeArea(
       child: Scaffold(
         body: Stack(
@@ -94,12 +123,13 @@ class _HomeGatosPageState extends State<HomeGatosPage> {
                     child: Column(
                       children: [
                         Text(
-                          "Resumen de gastos",
+                          texts.appTitle,
                           style: TextStyle(
                             fontSize: 22,
                             fontWeight: FontWeight.bold,
                           ),
                         ),
+                        Text(texts.helloAlguien("Jhonny Gallegos")),
                         Text(
                           "Gestiona tus gastos de la mejor forma",
                           style: TextStyle(color: Colors.grey),
@@ -109,15 +139,19 @@ class _HomeGatosPageState extends State<HomeGatosPage> {
                           child: FieldWidget(
                             controller: _searchController,
                             hintText: "Buscar por gasto",
+                            onChanged: (text) {
+                              filterGastos(text);
+                            },
                           ),
                         ),
 
                         Expanded(
                           child: ListView.builder(
-                            itemCount: gastosList.length,
+                            itemCount: gastosFiltradosList.length,
+                            // itemCount: gastosList.length,
                             itemBuilder: (BuildContext context, int index) {
                               return CustomCardWidget(
-                                gastoModel: gastosList[index],
+                                gastoModel: gastosFiltradosList[index],
                               );
                             },
                           ),

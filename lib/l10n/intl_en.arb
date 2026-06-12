@@ -1,0 +1,7 @@
+{
+  "welcome": "Welcome",
+  "login": "Login",
+  "logout": "Logout",
+  "appTitle": "expense summary",
+  "helloAlguien": "Hi {name}"
+}

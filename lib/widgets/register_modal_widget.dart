@@ -18,13 +18,52 @@ class _RegisterModalWidgetState extends State<RegisterModalWidget> {
   TextEditingController dateController = TextEditingController();
   String typeSelected = "Alimentos";
 
+  void showSelectorDeFecha() async {
+    DateTime? selectedDay = await showDatePicker(
+      context: context,
+      firstDate: DateTime(2020),
+      lastDate: DateTime(2030),
+      initialDate: DateTime.now(),
+      helpText: "Selecciona una fecha",
+      cancelText: "Cancelar",
+      confirmText: "Aceptar",
+      fieldHintText: "dd/mm//aaaa",
+      fieldLabelText: "Fecha",
+      selectableDayPredicate: (day) {
+        return day.weekday != DateTime.sunday; //para deshabilitar algunos días
+      },
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: ColorScheme.light(
+              primary: Colors.cyan, //Color del encabezado y la selección
+              onPrimary: Colors.white, //texto encabezado
+              onSurface: Colors.black, //texto calendario
+            ),
+            dialogTheme: DialogThemeData(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadiusGeometry.circular(20),
+              ),
+            ),
+          ),
+          child: child!,
+        );
+      },
+    );
+    if (selectedDay != null) {
+      dateController.text =
+          "${selectedDay.day}/${selectedDay.month}/${selectedDay.year}";
+    }
+    setState(() {});
+  }
+
   Widget _buildAddButton() {
     return SizedBox(
       height: 50,
       width: double.infinity,
       child: ElevatedButton(
         style: ElevatedButton.styleFrom(backgroundColor: Colors.black),
-        onPressed: () {
+        onPressed: () async {
           GastoModel gastoModel = GastoModel(
             title: titleContoller.text.trim(),
             price: double.tryParse(priceControler.text.trim()) ?? 0,
@@ -32,22 +71,10 @@ class _RegisterModalWidgetState extends State<RegisterModalWidget> {
             type: typeSelected,
           );
 
-          DbHelperGastos.instance.insertGasto(gastoModel).then((res) {
-            if (res > 0) {
-              // Se ha insertado correctamente
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  backgroundColor: Colors.cyan,
-                  behavior: SnackBarBehavior.floating,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadiusGeometry.circular(16),
-                  ),
-                  content: Text("Se ha registrado correctamente"),
-                ),
-              );
-              Navigator.pop(context);
-            }
-          });
+          int res = await DbHelperGastos.instance.insertGasto(gastoModel);
+          if (res > 0) {
+            Navigator.pop(context, true);
+          }
         },
         child: Text("Añadir", style: TextStyle(color: Colors.white)),
       ),
@@ -75,6 +102,7 @@ class _RegisterModalWidgetState extends State<RegisterModalWidget> {
             FieldWidget(
               controller: dateController,
               hintText: "Ingresa la fecha",
+              function: showSelectorDeFecha,
             ),
             Wrap(
               spacing: 8,

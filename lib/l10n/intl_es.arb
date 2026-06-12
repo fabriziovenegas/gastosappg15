@@ -1,0 +1,8 @@
+{
+  "welcome": "Bienvenido",
+  "login": "Iniciar sesión",
+  "logout": "Cerrar sesión",
+  "appTitle": "Resumen de gastos",
+  "helloAlguien": "Hola {name}"
+
+}
